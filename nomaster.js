@@ -25,19 +25,22 @@ Server.prototype.serverinfo = function() {
 Server.prototype.timeout = function() {
 	this.emit('timeout');
 };
-Server.prototype.toBuffer = function() {
-	var buffer = new Buffer(6);
+Server.prototype.addressToBuffer = function() {
+	var buffer = new Buffer(4);
 	var octets = this.address.split('.');
 	for (var i = 0;i < 4;i++) {
-		buffer.writeUInt8(parseInt(octets[0], 10), 0);
-		buffer.writeUInt8(parseInt(octets[1], 10), 1);
-		buffer.writeUInt8(parseInt(octets[2], 10), 2);
-		buffer.writeUInt8(parseInt(octets[3], 10), 3);
+		buffer.writeUInt8(parseInt(octets[i], 10), i);
 	}
-	buffer.writeInt16LE(this.port, 4);
 	return buffer;
 };
-
+Server.prototype.portToBuffer = function () {
+	var buffer = new Buffer(2);
+	buffer.writeInt16LE(this.port, 0);
+	return buffer;
+};
+Server.prototype.toBuffer = function() {
+	return Buffer.concat([this.addressToBuffer(), this.portToBuffer()]);
+};
 var Servers = function() {
 	this.servers = {};
 };
