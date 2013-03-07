@@ -136,3 +136,7 @@ if (require.main === module) {
 	var master = new Master();
 	util.log("Odamex Master Started");
 }
+
+exports.Server = Server;
+exports.Servers = Servers;
+exports.Master = Master;
