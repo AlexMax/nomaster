@@ -2,9 +2,6 @@ var dgram = require('dgram');
 var events = require('events');
 var util = require('util');
 
-var SERVER_CHALLENGE = 5560020;
-var LAUNCHER_CHALLENGE = 777123;
-
 /**
  * Represents one Odamex server.
  */
@@ -131,7 +128,7 @@ Servers.prototype.toBuffer = function () {
 	}
 
 	header = new Buffer(6);
-	header.writeInt32LE(LAUNCHER_CHALLENGE, 0);
+	header.writeInt32LE(Master.prototype.LAUNCHER_CHALLENGE, 0);
 	header.writeInt16LE(serverBuffers.length, 4);
 
 	serverBuffers.unshift(header);
@@ -160,6 +157,12 @@ var Master = function(options) {
 };
 
 /**
+ * Packet identifiers.
+ */
+Master.prototype.SERVER_CHALLENGE = 5560020;
+Master.prototype.LAUNCHER_CHALLENGE = 777123;
+
+/**
  * Default options.
  * 
  * MAX_SERVER_AGE is the amount of time in milliseconds that  a Server is
@@ -177,6 +180,10 @@ Master.prototype.defaults = {
  * full update from the server, or a challenge from the launcher.
  */
 Master.prototype.message = function(msg, rinfo) {
+	if (rinfo.size < 4) {
+		return;
+	}
+
 	var challenge = msg.readInt32LE(0);
 
 	switch (challenge) {
