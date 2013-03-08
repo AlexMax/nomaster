@@ -1,4 +1,5 @@
 var assert = require('assert');
+var dgram = require('dgram');
 
 var nomaster = require('../nomaster');
 
@@ -24,42 +25,60 @@ describe('Server', function() {
 });
 
 describe('Master', function() {
-	var rinfo = {
-		address: '127.0.0.1',
-		family: 'IPv4',
-		port: 10000,
-		size: 1
-	};
-	it('should not die if you fuzz the port with a single-byte message', function() {
-		var master = new nomaster.Master();
+	describe('#message()', function() {
+		var rinfo = {
+			address: '127.0.0.1',
+			family: 'IPv4',
+			port: 10000,
+			size: 1
+		};
+		it('should correctly handle a lack of servers on the master', function(done) {
+			var master = new nomaster.Master();
 
-		var message = new Buffer(1);
-		message[0] = 0xff;
+			var client = dgram.createSocket('udp4', function(msg, rinfo) {
+				if (rinfo.port !== 15000) {
+					return;
+				}
+				assert.strictEqual(msg.toString('hex'), 'a3db0b000000');
+				done();
+			});
+			client.bind(10000);
 
-		assert.doesNotThrow(function() {
-			master.message(message, rinfo);
+			var message = new Buffer(4);
+			message.writeInt32LE(nomaster.Master.prototype.LAUNCHER_CHALLENGE, 0);
+			client.send(message, 0, message.length, nomaster.Master.prototype.defaults.PORT, 'localhost');
 		});
-	});
-	it('should not die if you fuzz the port with an incomplete SERVER_CHALLENGE', function() {
-		var master = new nomaster.Master();
+		it('should not die if you fuzz the port with a single-byte message', function() {
+			var master = new nomaster.Master();
 
-		var message = new Buffer(5);
-		message.writeInt32LE(nomaster.Master.prototype.SERVER_CHALLENGE, 0);
-		message[4] = 0xff;
+			var message = new Buffer(1);
+			message[0] = 0xff;
 
-		assert.doesNotThrow(function() {
-			master.message(message, rinfo);
+			assert.doesNotThrow(function() {
+				master.message(message, rinfo);
+			});
 		});
-	});
-	it('should not die if you fuzz the port with an malformed LAUNCHER_CHALLENGE', function() {
-		var master = new nomaster.Master();
+		it('should not die if you fuzz the port with an incomplete SERVER_CHALLENGE', function() {
+			var master = new nomaster.Master();
 
-		var message = new Buffer(5);
-		message.writeInt32LE(nomaster.Master.prototype.LAUNCHER_CHALLENGE, 0);
-		message[4] = 0xff;
+			var message = new Buffer(5);
+			message.writeInt32LE(nomaster.Master.prototype.SERVER_CHALLENGE, 0);
+			message[4] = 0xff;
 
-		assert.doesNotThrow(function() {
-			master.message(message, rinfo);
+			assert.doesNotThrow(function() {
+				master.message(message, rinfo);
+			});
+		});
+		it('should not die if you fuzz the port with an malformed LAUNCHER_CHALLENGE', function() {
+			var master = new nomaster.Master();
+
+			var message = new Buffer(5);
+			message.writeInt32LE(nomaster.Master.prototype.LAUNCHER_CHALLENGE, 0);
+			message[4] = 0xff;
+
+			assert.doesNotThrow(function() {
+				master.message(message, rinfo);
+			});
 		});
 	});
 });

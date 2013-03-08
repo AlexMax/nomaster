@@ -127,7 +127,7 @@ Servers.prototype.toBuffer = function () {
 		}
 	}
 
-	header = new Buffer(6);
+	var header = new Buffer(6);
 	header.writeInt32LE(Master.prototype.LAUNCHER_CHALLENGE, 0);
 	header.writeInt16LE(serverBuffers.length, 4);
 
@@ -187,7 +187,7 @@ Master.prototype.message = function(msg, rinfo) {
 	var challenge = msg.readInt32LE(0);
 
 	switch (challenge) {
-	case SERVER_CHALLENGE:
+	case this.SERVER_CHALLENGE:
 		if (rinfo.size > 6) {
 			util.log("Full response not implemented");
 		} else if (rinfo.size == 6) {
@@ -196,7 +196,7 @@ Master.prototype.message = function(msg, rinfo) {
 			this.servers.updateServer(rinfo.address, rinfo.port, this.options.MAX_SERVER_AGE);
 		}
 		break;
-	case LAUNCHER_CHALLENGE:
+	case this.LAUNCHER_CHALLENGE:
 		if (rinfo.size > 4) {
 			util.log("Master syncing server list (ignored), IP = " + rinfo.address);
 			return;
