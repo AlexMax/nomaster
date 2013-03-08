@@ -24,6 +24,20 @@ describe('Server', function() {
 	});
 });
 
+describe('Servers', function() {
+	describe('#updateServer()', function() {
+		it('should not overrun the maximum amount of servers per IP setting', function() {
+			var servers = new nomaster.Servers({
+				maxServersPerIP: 2
+			});
+			for (var i = 0;i < 3;i++) {
+				servers.updateServer('127.0.0.1', 10666 + i, 1000);
+			}
+			assert.strictEqual(Object.keys(servers.servers['127.0.0.1']).length, 2);
+		});
+	});
+});
+
 describe('Master', function() {
 	describe('#message()', function() {
 		var rinfo = {

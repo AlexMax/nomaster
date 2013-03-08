@@ -74,8 +74,9 @@ Server.prototype.toBuffer = function() {
  * organized in such a way that makes it easier to group the servers by IP
  * address.  It also handles writing out a full server list message.
  */
-var Servers = function() {
+var Servers = function(options) {
 	this.servers = {};
+	this.maxServersPerIP = options.maxServersPerIP || 65536;
 };
 
 /**
@@ -86,7 +87,14 @@ Servers.prototype.updateServer = function(address, port, max_server_age) {
 	if (!(address in this.servers)) {
 		this.servers[address] = {};
 	}
+
 	if (!(port in this.servers[address])) {
+		// Don't add a server if we run into the maximum servers per IP
+		var numServers = Object.keys(this.servers[address]).length;
+		if (numServers >= this.maxServersPerIP) {
+			return;
+		}
+
 		var server = new Server(address, port, max_server_age);
 		server.on('timeout', this.deleteServer.bind(this, address, port));
 		this.servers[address][port] = server;
@@ -149,7 +157,9 @@ var Master = function(options) {
 		this.options = this.defaults;
 	}
 
-	this.servers = new Servers();
+	this.servers = new Servers({
+		maxServersPerIP: this.options.MAX_SERVERS_PER_IP
+	});
 
 	this.socket = dgram.createSocket('udp4');
 	this.socket.on('message', this.message.bind(this));
@@ -171,6 +181,7 @@ Master.prototype.LAUNCHER_CHALLENGE = 777123;
  * the master listens on.
  */
 Master.prototype.defaults = {
+	MAX_SERVERS_PER_IP: 32,
 	MAX_SERVER_AGE: 300000,
 	PORT: 15000
 };
