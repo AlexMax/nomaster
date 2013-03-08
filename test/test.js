@@ -1,25 +1,27 @@
 var assert = require('assert');
 var dgram = require('dgram');
 
-var nomaster = require('../nomaster');
+var server = require('../server');
+var servers = require('../servers');
+var master = require('../master');
 
 describe('Server', function() {
 	describe('#addressToBuffer()', function() {
 		it('should output an IP address as a packed buffer', function() {
-			var server = new nomaster.Server('127.0.0.1', 10666, 300000);
-			assert.strictEqual(server.addressToBuffer().toString('hex'), '7f000001');
+			var s = new server.Server('127.0.0.1', 10666, 300000);
+			assert.strictEqual(s.addressToBuffer().toString('hex'), '7f000001');
 		});
 	});
 	describe('#portToBuffer()', function() {
 		it('should output a port as a packed buffer', function() {
-			var server = new nomaster.Server('127.0.0.1', 10666, 300000);
-			assert.strictEqual(server.portToBuffer().toString('hex'), 'aa29');
+			var s = new server.Server('127.0.0.1', 10666, 300000);
+			assert.strictEqual(s.portToBuffer().toString('hex'), 'aa29');
 		});
 	});
 	describe('#toBuffer()', function() {
 		it('should output an IP address and port as a packed buffer', function() {
-			var server = new nomaster.Server('127.0.0.1', 10666, 300000);
-			assert.strictEqual(server.toBuffer().toString('hex'), '7f000001aa29');
+			var s = new server.Server('127.0.0.1', 10666, 300000);
+			assert.strictEqual(s.toBuffer().toString('hex'), '7f000001aa29');
 		});
 	});
 });
@@ -27,13 +29,13 @@ describe('Server', function() {
 describe('Servers', function() {
 	describe('#updateServer()', function() {
 		it('should not overrun the maximum amount of servers per IP setting', function() {
-			var servers = new nomaster.Servers({
+			var s = new servers.Servers({
 				maxServersPerIP: 2
 			});
 			for (var i = 0;i < 3;i++) {
-				servers.updateServer('127.0.0.1', 10666 + i, 1000);
+				s.updateServer('127.0.0.1', 10666 + i, 1000);
 			}
-			assert.strictEqual(Object.keys(servers.servers['127.0.0.1']).length, 2);
+			assert.strictEqual(Object.keys(s.servers['127.0.0.1']).length, 2);
 		});
 	});
 });
@@ -47,7 +49,7 @@ describe('Master', function() {
 			size: 1
 		};
 		it('should correctly handle a lack of servers on the master', function(done) {
-			var master = new nomaster.Master();
+			var m = new master.Master();
 
 			var client = dgram.createSocket('udp4', function(msg, rinfo) {
 				if (rinfo.port !== 15000) {
@@ -59,39 +61,39 @@ describe('Master', function() {
 			client.bind(10000);
 
 			var message = new Buffer(4);
-			message.writeInt32LE(nomaster.Master.prototype.LAUNCHER_CHALLENGE, 0);
-			client.send(message, 0, message.length, nomaster.Master.prototype.defaults.PORT, 'localhost');
+			message.writeInt32LE(m.LAUNCHER_CHALLENGE, 0);
+			client.send(message, 0, message.length, master.Master.prototype.defaults.PORT, 'localhost');
 		});
 		it('should not die if you fuzz the port with a single-byte message', function() {
-			var master = new nomaster.Master();
+			var m = new master.Master();
 
 			var message = new Buffer(1);
 			message[0] = 0xff;
 
 			assert.doesNotThrow(function() {
-				master.message(message, rinfo);
+				m.message(message, rinfo);
 			});
 		});
 		it('should not die if you fuzz the port with an incomplete SERVER_CHALLENGE', function() {
-			var master = new nomaster.Master();
+			var m = new master.Master();
 
 			var message = new Buffer(5);
-			message.writeInt32LE(nomaster.Master.prototype.SERVER_CHALLENGE, 0);
+			message.writeInt32LE(m.SERVER_CHALLENGE, 0);
 			message[4] = 0xff;
 
 			assert.doesNotThrow(function() {
-				master.message(message, rinfo);
+				m.message(message, rinfo);
 			});
 		});
 		it('should not die if you fuzz the port with an malformed LAUNCHER_CHALLENGE', function() {
-			var master = new nomaster.Master();
+			var m = new master.Master();
 
 			var message = new Buffer(5);
-			message.writeInt32LE(nomaster.Master.prototype.LAUNCHER_CHALLENGE, 0);
+			message.writeInt32LE(m.LAUNCHER_CHALLENGE, 0);
 			message[4] = 0xff;
 
 			assert.doesNotThrow(function() {
-				master.message(message, rinfo);
+				m.message(message, rinfo);
 			});
 		});
 	});
