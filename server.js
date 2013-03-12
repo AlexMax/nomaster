@@ -57,7 +57,7 @@ Server.prototype.timeout = function() {
  */
 Server.prototype.portToBuffer = function () {
 	var buffer = new Buffer(2);
-	buffer.writeInt16LE(this.port, 0);
+	buffer.writeUInt16LE(this.port, 0);
 	return buffer;
 };
 

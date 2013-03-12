@@ -77,4 +77,34 @@ Servers.prototype.toBuffer = function () {
 	return Buffer.concat(serverBuffers);
 };
 
+Servers.prototype.toCompressedBuffer = function() {
+	var serverBuffers = [];
+
+	for (var address in this.servers) {
+		var length = Object.keys(this.servers[address]).length;
+		if (!length) {
+			continue;
+		}
+
+		var buffer = new Buffer(6 + (length * 2));
+		var addrBuffer = null;
+
+		var ports = [];
+		for (var server in this.servers[address]) {
+			if (addrBuffer === null) {
+				addrBuffer = this.servers[address][server].addressToBuffer();
+			}
+			ports.push(this.servers[address][server].portToBuffer());
+		}
+
+		buffer.writeUInt16LE(length, 0);
+		addrBuffer.copy(buffer, 2);
+		Buffer.concat(ports).copy(buffer, 6);
+
+		serverBuffers.push(buffer);
+	}
+
+	return Buffer.concat(serverBuffers);
+}
+
 exports.Servers = Servers;

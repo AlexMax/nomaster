@@ -1,9 +1,13 @@
 var assert = require('assert');
 var dgram = require('dgram');
+var util = require('util');
 
 var server = require('../server');
 var servers = require('../servers');
 var master = require('../master');
+
+// Silence logging for unit tests.
+util.log = function() {}
 
 describe('Server', function() {
 	describe('#addressToBuffer()', function() {
@@ -36,6 +40,26 @@ describe('Servers', function() {
 				s.updateServer('127.0.0.1', 10666 + i, 1000);
 			}
 			assert.strictEqual(Object.keys(s.servers['127.0.0.1']).length, 2);
+		});
+	});
+	describe('#toCompressedBuffer()', function() {
+		it('should correctly handle a few random example servers', function() {
+			var s = new servers.Servers({
+				maxServersPerIP: 10
+			});
+
+			s.updateServer('127.0.0.1', 10666, 10000);
+			s.updateServer('127.0.0.1', 10667, 10000);
+			s.updateServer('192.168.1.1', 30000, 10000);
+
+			assert.strictEqual(s.toCompressedBuffer().toString('hex'),
+			                   '02007f000001aa29ab290100c0a801013075');
+		});
+		it('should correctly handle an empty server list', function() {
+			var s = new servers.Servers({
+				maxServersPerIP: 10
+			});
+			assert.strictEqual(s.toCompressedBuffer().toString('hex'), '');
 		});
 	});
 });
